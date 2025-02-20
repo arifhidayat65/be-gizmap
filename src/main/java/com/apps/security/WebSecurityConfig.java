@@ -2,10 +2,13 @@ package com.apps.security;
 
 import com.apps.security.jwt.AuthEntryPointJwt;
 import com.apps.security.jwt.AuthTokenFilter;
+import com.apps.security.middleware.DashboardMiddleware;
+import com.apps.security.middleware.LoginMiddleware;
 import com.apps.security.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -16,19 +19,24 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.http.HttpMethod;
-
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class WebSecurityConfig {
     @Autowired
-    UserDetailsServiceImpl userDetailsService;
+    private UserDetailsServiceImpl userDetailsService;
 
     @Autowired
     private AuthEntryPointJwt unauthorizedHandler;
+
+    @Autowired
+    private LoginMiddleware loginMiddleware;
+
+    @Autowired
+    private DashboardMiddleware dashboardMiddleware;
 
     @Bean
     public AuthTokenFilter authenticationJwtTokenFilter() {
@@ -65,15 +73,17 @@ public class WebSecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/blogs/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/discounts/**").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/promos/validate").permitAll()
-                    .requestMatchers("/ws/**").permitAll()
-                    .requestMatchers("/topic/**").permitAll()
-                    .requestMatchers("/app/**").permitAll()
-                    .requestMatchers("/user/**").permitAll()
+                    .requestMatchers("/ws/**", "/topic/**", "/app/**", "/user/**").permitAll()
+                    // Dashboard security
+                    .requestMatchers("/api/dashboard/**", "/api/admin/**", "/api/reports/**").hasRole("ADMIN")
                     .anyRequest().authenticated()
             );
 
-        http.authenticationProvider(authenticationProvider());
-        http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+        // Configure filters in specific order
+        http.authenticationProvider(authenticationProvider())
+            .addFilterBefore(loginMiddleware, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(dashboardMiddleware, AuthorizationFilter.class)
+            .addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
