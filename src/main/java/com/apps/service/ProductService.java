@@ -3,6 +3,7 @@ package com.apps.service;
 import com.apps.model.Product;
 import com.apps.repository.ProductRepository;
 import com.apps.payload.request.ProductRequest;
+import com.apps.payload.request.ProductSearchRequest;
 import com.apps.payload.response.ProductResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,19 @@ public class ProductService {
     @Transactional(readOnly = true)
     public List<ProductResponse> getAllProducts() {
         return productRepository.findAll().stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductResponse> searchProducts(ProductSearchRequest searchRequest) {
+        List<Product> products = productRepository.findProductsByFilters(
+            searchRequest.getName(),
+            searchRequest.getDescription(),
+            searchRequest.getMinPrice(),
+            searchRequest.getMaxPrice()
+        );
+        return products.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }

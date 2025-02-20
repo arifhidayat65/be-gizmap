@@ -1,6 +1,7 @@
 package com.apps.controller;
 
 import com.apps.payload.request.ProductRequest;
+import com.apps.payload.request.ProductSearchRequest;
 import com.apps.payload.response.ProductResponse;
 import com.apps.payload.response.MessageResponse;
 import com.apps.service.ProductService;
@@ -31,6 +32,23 @@ public class ProductController {
     @GetMapping
     public ResponseEntity<List<ProductResponse>> getAllProducts() {
         List<ProductResponse> products = productService.getAllProducts();
+        return ResponseEntity.ok(products);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<ProductResponse>> searchProducts(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice) {
+        
+        ProductSearchRequest searchRequest = new ProductSearchRequest();
+        searchRequest.setName(name);
+        searchRequest.setDescription(description);
+        searchRequest.setMinPrice(minPrice);
+        searchRequest.setMaxPrice(maxPrice);
+        
+        List<ProductResponse> products = productService.searchProducts(searchRequest);
         return ResponseEntity.ok(products);
     }
 

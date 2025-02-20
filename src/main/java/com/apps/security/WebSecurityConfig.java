@@ -65,6 +65,10 @@ public class WebSecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/blogs/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/discounts/**").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/promos/validate").permitAll()
+                    .requestMatchers("/ws/**").permitAll()
+                    .requestMatchers("/topic/**").permitAll()
+                    .requestMatchers("/app/**").permitAll()
+                    .requestMatchers("/user/**").permitAll()
                     .anyRequest().authenticated()
             );
 
