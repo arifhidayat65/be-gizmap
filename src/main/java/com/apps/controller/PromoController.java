@@ -1,52 +1,78 @@
 package com.apps.controller;
 
 import com.apps.payload.request.PromoRequest;
-import com.apps.payload.response.PromoResponse;
 import com.apps.payload.response.MessageResponse;
+import com.apps.payload.response.PromoResponse;
+import com.apps.service.BaseService;
 import com.apps.service.PromoService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/promos")
-public class PromoController {
+@CrossOrigin(origins = "*", maxAge = 3600)
+public class PromoController extends AbstractBaseController<PromoResponse, PromoRequest, Long> {
 
     @Autowired
     private PromoService promoService;
 
+    @Override
+    protected BaseService<PromoResponse, PromoRequest, Long> getService() {
+        return promoService;
+    }
+
+    @Override
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<PromoResponse> createPromo(@Valid @RequestBody PromoRequest promoRequest) {
-        PromoResponse promo = promoService.createPromo(promoRequest);
-        return new ResponseEntity<>(promo, HttpStatus.CREATED);
+    public ResponseEntity<PromoResponse> create(@RequestBody PromoRequest request) {
+        return super.create(request);
     }
 
+    @Override
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<PromoResponse>> getAllPromos() {
-        List<PromoResponse> promos = promoService.getAllPromos();
-        return ResponseEntity.ok(promos);
+    public ResponseEntity<List<PromoResponse>> getAll() {
+        return super.getAll();
     }
 
+    @Override
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<PromoResponse> getPromoById(@PathVariable Long id) {
-        PromoResponse promo = promoService.getPromoById(id);
-        return ResponseEntity.ok(promo);
+    public ResponseEntity<PromoResponse> getById(@PathVariable Long id) {
+        return super.getById(id);
+    }
+
+    @Override
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<PromoResponse> update(@PathVariable Long id, @RequestBody PromoRequest request) {
+        return super.update(id, request);
+    }
+
+    @Override
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        return super.delete(id);
     }
 
     @GetMapping("/active")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<PromoResponse>> getActivePromos() {
         List<PromoResponse> activePromos = promoService.getActivePromos();
         return ResponseEntity.ok(activePromos);
+    }
+
+    @GetMapping("/nearby")
+    public ResponseEntity<List<PromoResponse>> getNearbyActivePromos(
+            @RequestParam @NotNull(message = "Latitude is required") Double latitude,
+            @RequestParam @NotNull(message = "Longitude is required") Double longitude) {
+        List<PromoResponse> promos = promoService.getNearbyActivePromos(latitude, longitude);
+        return ResponseEntity.ok(promos);
     }
 
     @PostMapping("/validate")
@@ -61,22 +87,6 @@ public class PromoController {
                     .badRequest()
                     .body(new MessageResponse(e.getMessage()));
         }
-    }
-
-    @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<PromoResponse> updatePromo(
-            @PathVariable Long id,
-            @Valid @RequestBody PromoRequest promoRequest) {
-        PromoResponse updatedPromo = promoService.updatePromo(id, promoRequest);
-        return ResponseEntity.ok(updatedPromo);
-    }
-
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<MessageResponse> deletePromo(@PathVariable Long id) {
-        promoService.deletePromo(id);
-        return ResponseEntity.ok(new MessageResponse("Promo deleted successfully"));
     }
 
     @PostMapping("/{code}/use")
